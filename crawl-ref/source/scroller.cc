@@ -153,6 +153,7 @@ int formatted_scroller::show()
     tiles.json_write_bool("easy_exit", m_flags & FS_EASY_EXIT);
     tiles.json_write_bool("prewrapped", m_flags & FS_PREWRAPPED_TEXT);
     tiles.json_write_bool("start_at_end", m_flags & FS_START_AT_END);
+    write_webtiles_data();
     tiles.push_ui_layout("formatted-scroller", 2);
     popup->on_layout_pop([](){ tiles.pop_ui_layout(); });
 #endif

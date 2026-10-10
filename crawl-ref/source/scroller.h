@@ -61,6 +61,9 @@ protected:
     bool m_contents_dirty, m_scroll_dirty;
 
     virtual maybe_bool process_key(int keyin);
+#ifdef USE_TILE_WEB
+    virtual void write_webtiles_data() const {}
+#endif
     shared_ptr<ui::Scroller> m_scroller;
 };
 

@@ -16,10 +16,11 @@ If clipboard access is unavailable, the dialog offers selectable text for
 manual copying. Spectators cannot launch coaching and do not receive the
 private clipboard context. No request is sent to an AI by the game server.
 
-Install both the updated game client and the updated Webtiles server's
-`webtiles/process_handler.py`, which routes coaching context only to the
-playing account. Restart the Webtiles service to load that routing change;
-existing game processes need to be saved and reopened with the new binary.
+The browser can retrieve the saved file from the standard `#` morgue link,
+so shared servers do not need a Chili-specific Python handler or restart.
+If the private `coaching_context` handler is installed, that route is also
+supported. Existing game processes need to be saved and reopened with the
+updated Chili binary; refresh the browser to load the updated web client.
 
 Web checks (from `source/`): `node webserver/tests/coaching.test.js` and
 `python3 webserver/tests/test_coaching_routing.py`.
