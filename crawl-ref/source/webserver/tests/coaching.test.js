@@ -23,7 +23,7 @@ class Element {
         return this;
     }
     text(value) { this.label = value; return this; }
-    val(value) { this.value = value; return this; }
+    val(value) { if (value === undefined) return this.value; this.value = value; return this; }
     css(values) { Object.assign(this.attrs, values); return this; }
     appendTo(parent) { parent.nodes.push(this); return this; }
     children() { return this.more || (this.more = new Element()); }
@@ -42,7 +42,8 @@ class Element {
     }
 }
 
-function fixture({ watching = false, clipboardFails = false, legacyCopy = false, fetchFails = false } = {}) {
+function fixture({ watching = false, clipboardFails = false, legacyCopy = false, fetchFails = false,
+    storage = {}, storageFails = false } = {}) {
     const document = new Element("document");
     document.execCommand = () => legacyCopy;
     const launch = new Element("button");
@@ -55,7 +56,10 @@ function fixture({ watching = false, clipboardFails = false, legacyCopy = false,
             copied.push(text);
             return clipboardFails ? Promise.reject(new Error("Denied")) : Promise.resolve();
         } } },
-        window: { open(...args) { opened.push(args); } },
+        window: { open(...args) { opened.push(args); }, localStorage: {
+            getItem(key) { if (storageFails) throw new Error("Disabled"); return storage[key]; },
+            setItem(key, value) { if (storageFails) throw new Error("Disabled"); storage[key] = value; }
+        } },
         fetch(url) {
             fetched.push(url);
             return fetchFails ? Promise.reject(new Error("Unavailable")) :
@@ -87,6 +91,48 @@ async function main() {
     assert.deepEqual(inline.copied, [dump, dump]);
     assert.equal(inline.opened.length, 1);
     assert.equal(inline.fetched.length, 0);
+    const storage = {};
+    const choices = fixture({ storage });
+    const choicesPopup = new Element();
+    choices.module.install_controls(choicesPopup, dump);
+    const selector = choicesPopup.more.nodes.find(node => node.tag === "label").nodes[0];
+    assert.deepEqual(selector.nodes.map(node => node.label), ["ChatGPT", "Claude", "Gemini", "Copilot"]);
+    assert.equal(selector.val(), "chatgpt");
+    for (const [id, name, url] of [
+        ["chatgpt", "ChatGPT", "https://chatgpt.com/"],
+        ["claude", "Claude", "https://claude.ai/"],
+        ["gemini", "Gemini", "https://gemini.google.com/"],
+        ["copilot", "Copilot", "https://copilot.microsoft.com/"]
+    ]) {
+        selector.val(id).trigger("change");
+        const button = choicesPopup.more.nodes.find(node => node.label === "Copy and open " + name + " [B]");
+        assert.ok(button);
+        button.trigger("click");
+        choicesPopup.trigger("keydown", { key: "b" });
+        await Promise.resolve();
+        assert.equal(choices.opened.at(-1)[0], url);
+        assert.equal(choices.opened.at(-2)[0], url);
+        assert.equal(choices.copied.at(-1), dump);
+        assert.ok(choicesPopup.more.nodes[0].label.includes(name));
+        const openedBeforeCopy = choices.opened.length;
+        choicesPopup.trigger("keydown", { key: "c" });
+        await Promise.resolve();
+        assert.equal(choices.opened.length, openedBeforeCopy);
+    }
+    const copiedBeforeSelect = choices.copied.length;
+    choicesPopup.trigger("keydown", { key: "c", target: selector });
+    assert.equal(choices.copied.length, copiedBeforeSelect, "Native dropdown keys must not copy or open a tab");
+    const remembered = fixture({ storage });
+    const rememberedPopup = new Element();
+    remembered.module.install_controls(rememberedPopup, dump);
+    assert.equal(rememberedPopup.more.nodes.find(node => node.tag === "label").nodes[0].val(), "copilot");
+    for (const settings of [{ storageFails: true }, { storage: { "coaching-provider": "unknown" } }]) {
+        const defaults = fixture(settings);
+        const defaultsPopup = new Element();
+        defaults.module.install_controls(defaultsPopup, dump);
+        defaultsPopup.trigger("keydown", { key: "b" });
+        assert.equal(defaults.opened[0][0], "https://chatgpt.com/");
+    }
     const pending = fixture();
     pending.immediate.dump({ url: "https://another-host/morgue/Player/Player" });
     const pendingPopup = new Element();

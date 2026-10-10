@@ -6,20 +6,22 @@ Press **Shift-F1**, click **Coaching Help [Shift-F1]** under the player stats,
 or choose **Coaching Help** in the F1 menu. The game saves a fresh live morgue
 file using the same settings as `#` and opens a coaching dialog.
 
-Choose **Copy and open ChatGPT [B]**, then paste the copied prompt and dump
-into ChatGPT. This uses the player's browser session and account; the game
+Choose **ChatGPT**, **Claude**, **Gemini**, or **Copilot** in the AI service
+dropdown, then choose **Copy and open [B]** and paste the copied prompt and dump
+into that service. The browser remembers the selection when storage is
+available. This uses the player's browser session and account; the game
 server does not need an API key or Codex login. The clipboard prompt includes
 short tactical coaching instructions followed by the complete live dump.
 **C** copies without opening a tab, and **Escape** returns to play.
 
 If clipboard access is unavailable, the dialog offers selectable text for
-manual copying. Spectators cannot launch coaching and do not receive the
-private clipboard context. No request is sent to an AI by the game server.
+manual copying. Spectators cannot launch coaching or use its copy/open
+controls. No request is sent to an AI by the game server.
 
-The browser can retrieve the saved file from the standard `#` morgue link,
-so shared servers do not need a Chili-specific Python handler or restart.
-If the private `coaching_context` handler is installed, that route is also
-supported. Existing game processes need to be saved and reopened with the
+The popup carries the complete prompt and live dump through the normal
+Webtiles protocol, so shared servers do not need a Chili-specific Python
+handler or a browser download from the morgue domain. Existing game processes
+need to be saved and reopened with the
 updated Chili binary; refresh the browser to load the updated web client.
 
 Web checks (from `source/`): `node webserver/tests/coaching.test.js` and

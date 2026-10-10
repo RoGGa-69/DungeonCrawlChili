@@ -7,6 +7,18 @@ define(["jquery", "comm", "client"], function ($, comm, client) {
     var loading = false;
     var load_error = "";
     var generation = 0;
+    var providers = {
+        chatgpt: { name: "ChatGPT", url: "https://chatgpt.com/" },
+        claude: { name: "Claude", url: "https://claude.ai/" },
+        gemini: { name: "Gemini", url: "https://gemini.google.com/" },
+        copilot: { name: "Copilot", url: "https://copilot.microsoft.com/" }
+    };
+    var selected_provider = "chatgpt";
+    try {
+        var saved_provider = window.localStorage.getItem("coaching-provider");
+        if (Object.prototype.hasOwnProperty.call(providers, saved_provider))
+            selected_provider = saved_provider;
+    } catch (ignored) {}
     comm.register_handlers({
         coaching_context: function (message) {
             prompt = typeof message.prompt === "string" ? message.prompt : "";
@@ -110,6 +122,25 @@ define(["jquery", "comm", "client"], function ($, comm, client) {
             return;
         }
         var copy_prompt = prompt;
+        var provider_label = $("<label>").text("AI service: ").appendTo(controls);
+        var provider_select = $("<select>").attr("aria-label", "Coaching AI service")
+            .appendTo(provider_label);
+        Object.keys(providers).forEach(function (id) {
+            $("<option>").attr("value", id).text(providers[id].name)
+                .appendTo(provider_select);
+        });
+        provider_select.val(selected_provider).on("change", function (event) {
+            event.stopPropagation();
+            var id = provider_select.val();
+            if (!Object.prototype.hasOwnProperty.call(providers, id))
+                return;
+            selected_provider = id;
+            open_button.text("Copy and open " + providers[id].name + " [B]");
+            status.text("");
+            try {
+                window.localStorage.setItem("coaching-provider", id);
+            } catch (ignored) {}
+        });
         var manual = $("<textarea>").attr({
             readonly: true, rows: 5, "aria-label": "Coaching prompt and live morgue dump"
         }).css({ width: "95%", display: "none" }).val(copy_prompt).appendTo(controls);
@@ -121,7 +152,8 @@ define(["jquery", "comm", "client"], function ($, comm, client) {
             manual[0].setSelectionRange(0, copy_prompt.length);
             try {
                 if (document.execCommand("copy")) {
-                    status.text("Copied. Paste into ChatGPT to ask for advice.");
+                    status.text("Copied. Paste into " + providers[selected_provider].name
+                        + " to ask for advice.");
                     manual.hide();
                     return true;
                 }
@@ -138,18 +170,20 @@ define(["jquery", "comm", "client"], function ($, comm, client) {
             // gesture in Safari and avoids losing focus to the new tab.
             if (!fallback_copy() && navigator.clipboard && navigator.clipboard.writeText) {
                 navigator.clipboard.writeText(copy_prompt).then(function () {
-                    status.text("Copied. Paste into ChatGPT to ask for advice.");
+                    status.text("Copied. Paste into " + providers[selected_provider].name
+                        + " to ask for advice.");
                     manual.hide();
                 }, fallback_copy);
             }
             if (open_browser)
-                window.open("https://chatgpt.com/", "_blank", "noopener,noreferrer");
+                window.open(providers[selected_provider].url, "_blank", "noopener,noreferrer");
         }
 
         $("<button>").attr("type", "button").text("Copy dump [C]")
             .on("click", function (event) { event.stopPropagation(); copy(false); })
             .appendTo(controls);
-        $("<button>").attr("type", "button").text("Copy and open ChatGPT [B]")
+        var open_button = $("<button>").attr("type", "button")
+            .text("Copy and open " + providers[selected_provider].name + " [B]")
             .on("click", function (event) { event.stopPropagation(); copy(true); })
             .appendTo(controls);
         $("<button>").attr("type", "button").text("Return [Esc]")
@@ -158,6 +192,12 @@ define(["jquery", "comm", "client"], function ($, comm, client) {
                 comm.send_message("key", { keycode: 27 });
             }).appendTo(controls);
         popup.on("keydown.coaching keypress.coaching", function (event) {
+            if ($(event.target).is("select")) {
+                // Leave native dropdown navigation to the browser, without
+                // forwarding its keystrokes to the game or copy shortcuts.
+                event.stopImmediatePropagation();
+                return;
+            }
             if ($(event.target).is("textarea"))
                 return;
             var key = (event.key || String.fromCharCode(event.which)).toLowerCase();
