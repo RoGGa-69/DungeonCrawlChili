@@ -3203,13 +3203,15 @@ static void _build_dungeon_level()
     fixup_misplaced_items();
     link_items();
 
-    // D:1 supplies unbranded weapons, including vaults, monsters, and shops.
+    // D:1 supplies unbranded ordinary weapons, including vaults, monsters,
+    // and shops. Artefacts must keep their generated or fixed properties.
     // Apply this only during generation, never to weapons brought back here.
     if (player_in_branch(BRANCH_DUNGEON) && you.depth == 1)
     {
         const auto remove_brand = [](item_def &item)
         {
             if (!item.defined() || item.base_type != OBJ_WEAPONS
+                || is_artefact(item)
                 || get_weapon_brand(item) == SPWPN_NORMAL)
             {
                 return;
@@ -3218,14 +3220,9 @@ static void _build_dungeon_level()
             // Blessed weapon types require holy wrath; use their base types.
             if (is_blessed(item))
                 convert2bad(item);
-            if (is_artefact(item))
-                artefact_set_property(item, ARTP_BRAND, SPWPN_NORMAL);
-            else
-            {
-                set_item_ego_type(item, OBJ_WEAPONS, SPWPN_NORMAL);
-                if (item.plus <= 0)
-                    set_equip_desc(item, ISFLAG_NO_DESC);
-            }
+            set_item_ego_type(item, OBJ_WEAPONS, SPWPN_NORMAL);
+            if (item.plus <= 0)
+                set_equip_desc(item, ISFLAG_NO_DESC);
         };
 
         for (auto &item : env.item)
