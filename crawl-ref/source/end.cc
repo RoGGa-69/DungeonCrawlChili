@@ -5,6 +5,10 @@
 
 #include "AppHdr.h"
 #include "death-recap.h"
+#include "coaching.h"
+#ifdef USE_TILE
+#include "outer-menu.h"
+#endif
 
 #include "end.h"
 
@@ -319,6 +323,9 @@ NORETURN void end_game(scorefile_entry &se)
         tiles.send_dump_info("morgue", fname);
 #endif
 
+#ifdef USE_TILE
+    const string analysis_dump = final_character_dump(se);
+#endif
     const game_exit exit_reason = _kill_method_to_exit(death_type);
 #if defined(DGL_WHEREIS) || defined(USE_TILE_WEB)
     const string reason = _exit_type_to_string(exit_reason);
@@ -409,9 +416,36 @@ NORETURN void end_game(scorefile_entry &se)
     vbox->add_child(make_shared<Text>(formatted_string::parse_string(morgue_dir)));
 #endif
 
+#ifdef USE_TILE
+    auto analysis_button = make_shared<MenuButton>();
+    analysis_button->set_child(make_shared<Text>("Post-mortem analysis [P]"));
+    analysis_button->on_activate_event([&](const ActivateEvent&) {
+        show_postmortem_help(analysis_dump);
+        return true;
+    });
+    vbox->add_child(analysis_button);
+#endif
     auto popup = make_shared<ui::Popup>(std::move(vbox));
+#ifdef USE_TILE
+    popup->on_hotkey_event([&](const KeyEvent &event) {
+        if (event.key() == 'p' || event.key() == 'P')
+        {
+            show_postmortem_help(analysis_dump);
+            return true;
+        }
+        return false;
+    });
+#endif
     bool done = false;
-    popup->on_keydown_event([&](const KeyEvent&) { return done = true; });
+    popup->on_keydown_event([&](const KeyEvent &event) {
+#ifdef USE_TILE_LOCAL
+        if (event.key() == '\t' || event.key() == CK_SHIFT_TAB)
+            return false;
+#else
+        UNUSED(event);
+#endif
+        return done = true;
+    });
 
     if (!crawl_state.seen_hups && !crawl_state.disables[DIS_CONFIRMATIONS])
     {
@@ -421,6 +455,7 @@ NORETURN void end_game(scorefile_entry &se)
     tiles.json_write_int("t", death_tile.tile);
     tiles.json_write_int("tex", get_tile_texture(death_tile.tile));
     tiles.json_close_object();
+    tiles.json_write_bool("postmortem_available", true);
     tiles.json_write_string("title", goodbye_title);
     tiles.json_write_string("body", goodbye_msg
             + hiscores_print_list(11, SCORE_TERSE, hiscore_index, start));

@@ -1,4 +1,4 @@
-define(["jquery", "comm", "client"], function ($, comm, client) {
+define(["jquery", "comm", "client", "ttyrec"], function ($, comm, client, ttyrec) {
     "use strict";
 
     var prompt = "";
@@ -61,7 +61,7 @@ define(["jquery", "comm", "client"], function ($, comm, client) {
             });
     });
 
-    function install_controls(popup, popup_prompt)
+    function install_controls(popup, popup_prompt, postmortem)
     {
         if (client.is_watching())
             return;
@@ -122,8 +122,46 @@ define(["jquery", "comm", "client"], function ($, comm, client) {
             return;
         }
         var copy_prompt = prompt;
+        var morgue_prompt = prompt;
+        var reading_recording = false;
+        var file_generation = 0;
+        if (postmortem) {
+            var recording_label = $("<label>").text("Optional ttyrec (uncompressed .ttyrec, up to 50 MiB): ").appendTo(controls);
+            var recording = $("<input>").attr({ type: "file", "aria-label": "Post-mortem ttyrec recording" }).appendTo(recording_label);
+            recording.on("change", function (event) {
+                event.stopPropagation();
+                var file = this.files && this.files[0];
+                if (!file) return;
+                var request_id = ++file_generation;
+                if (file.size > 50*1024*1024) { reading_recording = false; status.text("Recording exceeds 50 MiB; current context retained."); return; }
+                reading_recording = true;
+                status.text("Reading recording locally...");
+                file.arrayBuffer().then(function (data) {
+                    if (request_id !== file_generation) return;
+                    return ttyrec.read ? ttyrec.read(data) : ttyrec.transcript(data);
+                }).then(function (excerpts) {
+                    if (request_id !== file_generation) return;
+                    copy_prompt = morgue_prompt.slice(0, morgue_prompt.lastIndexOf("\nRECORDING:"))
+                        + "\nRECORDING: ttyrec screen excerpts\nBEGIN TTYREC EXCERPTS\n"
+                        + excerpts + "\nEND TTYREC EXCERPTS\n";
+                    manual.val(copy_prompt);
+                    reading_recording = false;
+                    status.text("Recording attached locally. Sampled screen excerpts included, with finer detail at the end.");
+                }).catch(function (error) {
+                    if (request_id !== file_generation) return;
+                    reading_recording = false;
+                    status.text("Could not read recording: " + error.message + " Current context retained. Decompress .gz/.bz2 files first.");
+                });
+            });
+            $("<button>").attr("type", "button").text("Use morgue only")
+                .on("click", function (event) {
+                    event.stopPropagation(); file_generation++; reading_recording = false;
+                    copy_prompt = morgue_prompt; manual.val(copy_prompt); recording.val("");
+                    status.text("Morgue-only analysis selected; no recording included.");
+                }).appendTo(controls);
+        }
         var provider_label = $("<label>").text("AI service: ").appendTo(controls);
-        var provider_select = $("<select>").attr("aria-label", "Coaching AI service")
+        var provider_select = $("<select>").attr("aria-label", postmortem ? "Post-mortem AI service" : "Coaching AI service")
             .appendTo(provider_label);
         Object.keys(providers).forEach(function (id) {
             $("<option>").attr("value", id).text(providers[id].name)
@@ -142,7 +180,7 @@ define(["jquery", "comm", "client"], function ($, comm, client) {
             } catch (ignored) {}
         });
         var manual = $("<textarea>").attr({
-            readonly: true, rows: 5, "aria-label": "Coaching prompt and live morgue dump"
+            readonly: true, rows: 5, "aria-label": postmortem ? "Post-mortem analysis context" : "Coaching prompt and live morgue dump"
         }).css({ width: "95%", display: "none" }).val(copy_prompt).appendTo(controls);
 
         function fallback_copy()
@@ -164,6 +202,7 @@ define(["jquery", "comm", "client"], function ($, comm, client) {
 
         function copy(open_browser)
         {
+            if (reading_recording) { status.text("Wait for the recording to finish loading."); return; }
             // Start copying while the game tab still has focus. Open the new
             // tab synchronously in this same gesture to avoid popup blockers.
             // Synchronous selection/copy preserves the real keyboard/click
@@ -179,7 +218,7 @@ define(["jquery", "comm", "client"], function ($, comm, client) {
                 window.open(providers[selected_provider].url, "_blank", "noopener,noreferrer");
         }
 
-        $("<button>").attr("type", "button").text("Copy dump [C]")
+        $("<button>").attr("type", "button").text(postmortem ? "Copy analysis context [C]" : "Copy dump [C]")
             .on("click", function (event) { event.stopPropagation(); copy(false); })
             .appendTo(controls);
         var open_button = $("<button>").attr("type", "button")
@@ -201,7 +240,7 @@ define(["jquery", "comm", "client"], function ($, comm, client) {
                 event.stopImmediatePropagation();
                 return;
             }
-            if ($(event.target).is("select")) {
+            if ($(event.target).is("select") || $(event.target).is("input")) {
                 // Leave native dropdown navigation to the browser, without
                 // forwarding its keystrokes to the game or copy shortcuts.
                 event.stopImmediatePropagation();

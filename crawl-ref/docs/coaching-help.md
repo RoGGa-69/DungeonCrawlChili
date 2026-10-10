@@ -74,3 +74,47 @@ live morgue files remain on disk as usual; temporary request/response files
 are removed after each request. No automatic background coaching is sent.
 
 Bridge checks: `python3 dat/coaching/test_chatgpt_coach.py` from `source/`.
+
+## Post-mortem analysis
+
+At the game-over screen, click **Post-mortem analysis [P]** or press **P**.
+This uses the final morgue, including the existing death recap, rather than
+saving another live dump. It also works for completed wins and quits.
+Choose ChatGPT, Claude, Gemini, or Copilot and use **B** to copy/open or **C**
+to copy only. Paste the context into the chosen service using your own account.
+No server API key or separate browser app is required.
+
+An optional ttyrec adds timestamped terminal screen excerpts. The converter
+samples changed screens across the recording and retains finer detail near
+the end, within a 120,000-character excerpt budget. These are output frames,
+not keypresses or turns: partial redraws, unsupported terminal operations,
+and omitted screens limit what can be concluded. The analysis explicitly
+separates evidence from inference and checks for a mismatched recording.
+All items are identified in Chili; the prompt treats their properties as
+known, while requiring evidence that a resource was available at the time.
+
+In desktop Tiles, press **T** and enter the recording's file path. Python 3
+supports uncompressed ttyrec, `.gz`, and `.bz2` files, including `~/` paths.
+The recording replaces any previous attachment. Enter an empty path to
+remove it and return to morgue-only analysis. Tiles does not create a
+recording automatically. With ChatGPT selected, **G** requests the analysis
+through the player's Codex login, and displays a scrollable report inside
+Tiles. Escape returns from the report to the analysis chooser.
+
+In Webtiles, use the optional file chooser for an **uncompressed .ttyrec**.
+Decompress `.gz`/`.bz2` recordings first. The browser reads and converts the
+file locally; it is not uploaded to the game server. **Use morgue only**
+removes the attachment. Choose the recording from the same completed run;
+server-side recording discovery is not automatic. Spectators cannot launch
+analysis controls. Browsers use copy/paste for all four providers.
+
+Recording input is limited to 50 MiB after decompression and 500,000 frames.
+Invalid/truncated recordings show an error and preserve the current context.
+Nothing is sent to an AI until the player requests in-game analysis or
+pastes the copied context into a service. The report asks for the fatal
+sequence, an earlier recoverable decision, concrete alternative actions,
+strategic patterns, and three practical lessons, in up to 1,200 words.
+
+Additional checks (from `source/`):
+`python3 dat/coaching/test_ttyrec_transcript.py` and
+`node webserver/tests/ttyrec.test.js`.

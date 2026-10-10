@@ -69,13 +69,35 @@ function fixture({ watching = false, clipboardFails = false, legacyCopy = false,
             module = factory($, { register_handlers(map) { Object.assign(handlers, map); },
                 register_immediate_handlers(map) { Object.assign(immediate, map); },
                 send_message(type, data) { messages.push({ type, data }); } },
-                { is_watching: () => watching });
+                { is_watching: () => watching }, { transcript() { return "Decoded recording: An orc hits you. You die..."; } });
         }
     });
     return { document, launch, messages, copied, opened, handlers, immediate, fetched, module };
 }
 
 async function main() {
+    const post = fixture();
+    const postPopup = new Element();
+    const morgue = "Analyze this run\nBEGIN FINAL MORGUE\nHP: -2/50\nEND FINAL MORGUE\n\nRECORDING: No ttyrec supplied.\n";
+    post.module.install_controls(postPopup, morgue, true);
+    const upload = postPopup.more.nodes.find(n => n.tag === "label" && n.nodes.some(c => c.tag === "input")).nodes[0];
+    upload.files = [{ size: 50, arrayBuffer: () => Promise.resolve(new ArrayBuffer(12)) }];
+    upload.trigger("change");
+    postPopup.trigger("keydown", { key: "b" });
+    assert.equal(post.opened.length, 0, "Do not copy incomplete context while loading");
+    await new Promise(resolve => setImmediate(resolve));
+    postPopup.trigger("keydown", { key: "c" });
+    assert(post.copied[0].includes("BEGIN TTYREC EXCERPTS"));
+    assert(post.copied[0].includes("HP: -2/50"));
+    assert(!post.copied[0].includes("No ttyrec supplied"));
+    upload.files = [{ size: 20, arrayBuffer: () => Promise.reject(new Error("Truncated")) }];
+    upload.trigger("change");
+    await new Promise(resolve => setImmediate(resolve));
+    postPopup.trigger("keydown", { key: "c" });
+    assert.equal(post.copied[0], post.copied[1], "Failed upload retains previous context");
+    postPopup.more.nodes.find(n => n.label === "Use morgue only").trigger("click");
+    postPopup.trigger("keydown", { key: "c" });
+    assert.equal(post.copied[2], morgue);
     const player = fixture();
     player.document.trigger("game_init");
     player.launch.trigger("click");

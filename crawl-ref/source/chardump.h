@@ -42,6 +42,7 @@ void display_notes();
 void display_char_dump();
 // Save the same live dump as '#', and return exactly the text written.
 bool save_live_character_dump(string &text);
+string final_character_dump(const scorefile_entry &se);
 string chardump_desc(const item_def& item);
 
 string seed_description();
