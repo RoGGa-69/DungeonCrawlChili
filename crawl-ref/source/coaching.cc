@@ -59,11 +59,19 @@ public:
     coaching_scroller(const string &text, const string &prompt)
         : m_prompt(prompt)
     {
+#ifdef USE_TILE_WEB
+        set_title(formatted_string("Coaching Help"));
+#else
         set_title(formatted_string("Coaching Help - ChatGPT"));
+#endif
         set_tag("coaching_help");
         add_raw_text(text);
         set_more(formatted_string(
+#ifdef USE_TILE_WEB
+            "[B] Copy dump and open AI   [C] Copy only   [Esc] Return"));
+#else
             "[B] Copy dump and open ChatGPT   [C] Copy only   [Esc] Return"));
+#endif
     }
 protected:
 #ifdef USE_TILE_WEB
@@ -222,8 +230,8 @@ void show_coaching_help()
     // exact prompt, so copying needs neither a custom server handler nor CORS.
     tiles.send_dump_info("command", you.your_name);
     const string answer = "Your live morgue file has been saved (like #).\n\n"
-        "Choose Copy and open ChatGPT below, then paste into ChatGPT to ask "
-        "for advice using your own account.\n\n"
+        "Choose an AI service below, then copy and open it. Paste the copied "
+        "text there to ask for advice using your own account.\n\n"
         "The game stays paused here; asking for help takes no turn.";
 #elif defined(UNIX)
     const string answer = _ask_chatgpt(prompt);
