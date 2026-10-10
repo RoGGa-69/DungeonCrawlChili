@@ -268,7 +268,9 @@ static void _show_tiles_coaching(const string &prompt)
     answer->set_wrap_text(true);
     auto answer_scroller = make_shared<Scroller>();
     answer_scroller->set_child(answer);
-    answer_scroller->shrink_v = true;
+    // Scroller already permits shrinking when the popup runs out of space.
+    // shrink_v forces its natural height to its zero minimum, hiding replies.
+    answer_scroller->max_size().height = 300;
     body->add_child(answer_scroller);
     body->max_size().width = 720;
 
