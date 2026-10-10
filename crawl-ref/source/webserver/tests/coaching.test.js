@@ -77,6 +77,24 @@ async function main() {
     player.launch.trigger("click");
     assert.equal(player.messages[0].data.keycode, -500);
     const dump = "Coach this live dump: HP 12/55\nNotes: <script>not markup</script>";
+    // Shared servers need no coaching_context handler or cross-origin fetch.
+    const inline = fixture({ fetchFails: true });
+    const inlinePopup = new Element();
+    inline.module.install_controls(inlinePopup, dump);
+    inlinePopup.trigger("keydown", { key: "c" });
+    inlinePopup.trigger("keydown", { key: "b" });
+    await Promise.resolve();
+    assert.deepEqual(inline.copied, [dump, dump]);
+    assert.equal(inline.opened.length, 1);
+    assert.equal(inline.fetched.length, 0);
+    const pending = fixture();
+    pending.immediate.dump({ url: "https://another-host/morgue/Player/Player" });
+    const pendingPopup = new Element();
+    pending.module.install_controls(pendingPopup);
+    pending.module.install_controls(pendingPopup, dump);
+    for (let index = 0; index < 8; index++) await Promise.resolve();
+    pendingPopup.trigger("keydown", { key: "c" });
+    assert.equal(pending.copied[0], dump, "Late HTTP responses cannot replace the popup's exact dump");
     player.handlers.coaching_context({ prompt: dump });
     const popup = new Element();
     player.module.install_controls(popup);
@@ -141,8 +159,8 @@ async function main() {
     assert.equal(watcher.messages.length, 0);
     watcher.handlers.coaching_context({ prompt: dump });
     const watcherPopup = new Element();
-    watcher.module.install_controls(watcherPopup);
+    watcher.module.install_controls(watcherPopup, dump);
     assert.equal(watcherPopup.more, undefined);
-    console.log("Webtiles coaching checks passed: launch, exact copy, browser open, keyboard, fallback, privacy.");
+    console.log("Webtiles coaching checks passed: launch, popup context, exact copy, browser open, keyboard, fallback, spectator controls.");
 }
 main().catch(error => { console.error(error); process.exitCode = 1; });

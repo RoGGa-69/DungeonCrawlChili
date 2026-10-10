@@ -49,10 +49,17 @@ define(["jquery", "comm", "client"], function ($, comm, client) {
             });
     });
 
-    function install_controls(popup)
+    function install_controls(popup, popup_prompt)
     {
         if (client.is_watching())
             return;
+        if (typeof popup_prompt === "string" && popup_prompt.length) {
+            prompt = popup_prompt;
+            // Discard any older morgue request still in flight.
+            generation++;
+            loading = false;
+            load_error = "";
+        }
         active_popup = popup;
         popup.off(".coaching");
         var controls = popup.children(".more").empty();

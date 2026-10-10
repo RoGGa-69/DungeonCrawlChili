@@ -66,6 +66,14 @@ public:
             "[B] Copy dump and open ChatGPT   [C] Copy only   [Esc] Return"));
     }
 protected:
+#ifdef USE_TILE_WEB
+    void write_webtiles_data() const override
+    {
+        // Use the normal popup protocol supported by shared Webtiles servers.
+        // This contains the same known information as the saved public morgue.
+        tiles.json_write_string("coaching_prompt", m_prompt);
+    }
+#endif
     maybe_bool process_key(int key) override
     {
         if (key == 'b' || key == 'B' || key == 'c' || key == 'C')
@@ -210,11 +218,9 @@ void show_coaching_help()
     }
     const string prompt = _prompt(dump);
 #ifdef USE_TILE_WEB
-    // Shared Webtiles servers may not include this fork's private-context
-    // handler. Publish the standard '#' morgue URL for the browser fallback.
+    // Keep the ordinary '#' link available in chat. The popup carries the
+    // exact prompt, so copying needs neither a custom server handler nor CORS.
     tiles.send_dump_info("command", you.your_name);
-    // Route the live dump only to the playing account, never to spectators.
-    tiles.send_coaching_context(prompt);
     const string answer = "Your live morgue file has been saved (like #).\n\n"
         "Choose Copy and open ChatGPT below, then paste into ChatGPT to ask "
         "for advice using your own account.\n\n"

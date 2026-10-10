@@ -777,7 +777,7 @@ function ($, comm, client, ui, enums, cr, util, scroller, main, gui, player, opt
             $popup.children(".header").remove();
 
         if (desc.tag === "coaching_help")
-            coaching.install_controls($popup);
+            coaching.install_controls($popup, desc.coaching_prompt);
 
         var s = scroller($body[0]);
         var scroll_elem = s.scrollElement;
