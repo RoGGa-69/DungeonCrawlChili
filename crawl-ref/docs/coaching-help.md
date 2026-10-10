@@ -34,27 +34,36 @@ the player stats, or choose **Coaching Help** in the F1 game menu.
 Normal F1 and the quiver keys `(` and `)` keep their existing actions.
 
 Coaching Help saves a fresh live character morgue file, exactly as `#` does,
-and sends that text to ChatGPT through the local Codex CLI. It uses the
+and opens a dialog with a clickable **AI service** dropdown for **ChatGPT**,
+**Claude**, **Gemini**, and **Copilot**. Click it or press **A**, then choose
+with the mouse, arrow keys and Enter/Space, or **1–4**. Tab moves between
+controls; Escape closes an expanded dropdown before returning to play.
+The selection is remembered while the game is running. It uses the
 normal live dump settings, including `dump_order`, and does not identify
 unknown items or expose the raw save game. The player remains in control:
 advice never executes game commands, and asking does not take a turn.
 The dump can include the character name, seed, notes and message history.
 
-On Linux/macOS, install Python 3 and a current Codex CLI, then run
+All four services support copying the prompt and opening their website in
+the player's browser. Paste there using the player's own account. To get
+ChatGPT advice directly inside Tiles on Linux/macOS, install Python 3 and a
+current Codex CLI, then run
 `codex login` in a terminal and sign in with ChatGPT. Coaching uses that
-player's ChatGPT/Codex allowance and the CLI's default OpenAI model.
+player's ChatGPT/Codex allowance and the CLI's default OpenAI model. With
+ChatGPT selected, choose **Get in-game ChatGPT advice [G]** to send a request;
+opening the dialog or choosing another provider does not start that request.
 The prototype ignores custom Codex configuration, disables tools and web
 search, and requests a temporary read-only session. It does not install
 Codex, copy credentials, use API keys, or bill a developer's account.
 
 Escape cancels a pending request. Advice appears inside the game with:
 
-- **B**: copy the coaching prompt and dump, then open `chatgpt.com`.
+- **B**: copy the coaching prompt and dump, then open the selected AI service.
 - **C**: copy only.
 - **Escape**: return to the game.
 
 If Codex is unavailable, signed out, or has exhausted its allowance, the
-same browser fallback remains available. Paste the copied text into ChatGPT;
+same browser fallback remains available. Paste the copied text into the selected AI;
 sign-in and free usage depend on the player's account and current service
 availability. A ChatGPT subscription does not provide anonymous free API
 tokens to other players. Windows currently uses the browser fallback.
