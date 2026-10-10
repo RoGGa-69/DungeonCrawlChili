@@ -192,6 +192,15 @@ define(["jquery", "comm", "client"], function ($, comm, client) {
                 comm.send_message("key", { keycode: 27 });
             }).appendTo(controls);
         popup.on("keydown.coaching keypress.coaching", function (event) {
+            if ($(event.target).is("button")
+                && (event.key === " " || event.key === "Spacebar"
+                    || event.key === "Enter" || event.which === 32 || event.which === 13)) {
+                // The browser activates a focused button with Space/Enter.
+                // Do not let the scroller or game close it before the native
+                // click (Space activates on keyup). Preserve default behavior.
+                event.stopImmediatePropagation();
+                return;
+            }
             if ($(event.target).is("select")) {
                 // Leave native dropdown navigation to the browser, without
                 // forwarding its keystrokes to the game or copy shortcuts.

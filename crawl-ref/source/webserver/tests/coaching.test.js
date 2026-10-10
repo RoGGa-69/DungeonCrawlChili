@@ -122,6 +122,17 @@ async function main() {
     const copiedBeforeSelect = choices.copied.length;
     choicesPopup.trigger("keydown", { key: "c", target: selector });
     assert.equal(choices.copied.length, copiedBeforeSelect, "Native dropdown keys must not copy or open a tab");
+    const focusedButton = choicesPopup.more.nodes.find(node => node.label === "Copy and open Copilot [B]");
+    for (const type of ["keydown", "keypress"]) {
+        for (const [key, which] of [[" ", 32], ["Enter", 13]]) {
+            let stopped = false, prevented = false;
+            choicesPopup.trigger(type, { key, which, target: focusedButton,
+                stopImmediatePropagation() { stopped = true; },
+                preventDefault() { prevented = true; } });
+            assert.equal(stopped, true, "Space/Enter must not reach the game or scroller");
+            assert.equal(prevented, false, "Preserve native keyboard button activation");
+        }
+    }
     const remembered = fixture({ storage });
     const rememberedPopup = new Element();
     remembered.module.install_controls(rememberedPopup, dump);
