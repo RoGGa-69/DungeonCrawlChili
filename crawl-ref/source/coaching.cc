@@ -210,6 +210,9 @@ void show_coaching_help()
     }
     const string prompt = _prompt(dump);
 #ifdef USE_TILE_WEB
+    // Shared Webtiles servers may not include this fork's private-context
+    // handler. Publish the standard '#' morgue URL for the browser fallback.
+    tiles.send_dump_info("command", you.your_name);
     // Route the live dump only to the playing account, never to spectators.
     tiles.send_coaching_context(prompt);
     const string answer = "Your live morgue file has been saved (like #).\n\n"

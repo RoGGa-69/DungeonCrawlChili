@@ -31,6 +31,8 @@ class Element {
     show() { this.visible = true; return this; }
     hide() { this.visible = false; return this; }
     select() { this.selected = true; }
+    focus() { this.focused = true; }
+    setSelectionRange(start, end) { this.selection = [start, end]; }
     blur() {}
     is(selector) { return this.tag === selector; }
     trigger(type, event = {}) {
@@ -40,11 +42,11 @@ class Element {
     }
 }
 
-function fixture({ watching = false, clipboardFails = false } = {}) {
+function fixture({ watching = false, clipboardFails = false, legacyCopy = false, fetchFails = false } = {}) {
     const document = new Element("document");
-    document.execCommand = () => false;
+    document.execCommand = () => legacyCopy;
     const launch = new Element("button");
-    const messages = [], copied = [], opened = [], handlers = {};
+    const messages = [], copied = [], opened = [], handlers = {}, immediate = {}, fetched = [];
     const $ = value => value instanceof Element ? value : value === "#coaching-help" ? launch :
         new Element(value.replace(/[<>]/g, ""));
     let module;
@@ -54,13 +56,19 @@ function fixture({ watching = false, clipboardFails = false } = {}) {
             return clipboardFails ? Promise.reject(new Error("Denied")) : Promise.resolve();
         } } },
         window: { open(...args) { opened.push(args); } },
+        fetch(url) {
+            fetched.push(url);
+            return fetchFails ? Promise.reject(new Error("Unavailable")) :
+                Promise.resolve({ ok: true, text: () => Promise.resolve("Fresh live morgue: HP 12/55") });
+        },
         define(dependencies, factory) {
             module = factory($, { register_handlers(map) { Object.assign(handlers, map); },
+                register_immediate_handlers(map) { Object.assign(immediate, map); },
                 send_message(type, data) { messages.push({ type, data }); } },
                 { is_watching: () => watching });
         }
     });
-    return { document, launch, messages, copied, opened, handlers, module };
+    return { document, launch, messages, copied, opened, handlers, immediate, fetched, module };
 }
 
 async function main() {
@@ -85,7 +93,7 @@ async function main() {
     player.document.trigger("game_cleanup");
     const next = new Element();
     player.module.install_controls(next);
-    assert.equal(next.more, undefined, "Never reuse another game's dump");
+    assert.equal(next.more.nodes.length, 1, "Show a status instead of reusing another game's dump");
 
     const blocked = fixture({ clipboardFails: true });
     blocked.handlers.coaching_context({ prompt: dump });
@@ -97,6 +105,34 @@ async function main() {
     assert.equal(textarea.visible, true);
     assert.equal(textarea.selected, true);
     assert.equal(textarea.attrs.readonly, true);
+    assert.equal(textarea.focused, true);
+    assert.deepEqual(textarea.selection, [0, dump.length]);
+
+    const shared = fixture();
+    assert.equal(shared.immediate.dump({ url: "/morgue/Player/Player" }), false);
+    shared.module.install_controls(new Element());
+    // A fresh popup can replace the previous one while the morgue is loading.
+    const sharedPopup = new Element();
+    shared.module.install_controls(sharedPopup);
+    for (let index = 0; index < 8; index++) await Promise.resolve();
+    assert.equal(shared.fetched[0], "/morgue/Player/Player.txt");
+    sharedPopup.trigger("keydown", { key: "c" });
+    assert.ok(shared.copied[0].includes("Fresh live morgue: HP 12/55"));
+
+    const safari = fixture({ legacyCopy: true });
+    safari.handlers.coaching_context({ prompt: dump });
+    const safariPopup = new Element();
+    safari.module.install_controls(safariPopup);
+    safariPopup.trigger("keydown", { key: "b" });
+    assert.equal(safari.opened.length, 1);
+    assert.equal(safari.copied.length, 0, "Prefer synchronous copy before opening a new tab");
+
+    const failed = fixture({ fetchFails: true });
+    failed.immediate.dump({ url: "/morgue/Player/Player" });
+    const failedPopup = new Element();
+    failed.module.install_controls(failedPopup);
+    for (let index = 0; index < 8; index++) await Promise.resolve();
+    assert.ok(failedPopup.more.nodes[0].label.includes("Could not load"));
 
     const watcher = fixture({ watching: true });
     watcher.document.trigger("game_init");
