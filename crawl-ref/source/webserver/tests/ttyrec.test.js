@@ -40,3 +40,24 @@ assert.equal(replies[0].transcript, text);
 worker.onmessage({data: new ArrayBuffer(3)});
 assert(replies[1].error.includes('Truncated'));
 console.log('Ttyrec worker checks passed: readable output and safe malformed-file errors.');
+
+// A versioned game module must resolve its worker beside itself, not in the lobby.
+let workerDecoder, workerUrl;
+vm.runInNewContext(fs.readFileSync(__dirname + '/../game_data/static/ttyrec.js', 'utf8'), {
+    TextDecoder, Promise,
+    define(_, factory) { workerDecoder = factory({ toUrl(name) {
+        assert.equal(name, './ttyrec-worker.js');
+        return '/gamedata/chili/ttyrec-worker.js';
+    } }); },
+    Worker: class {
+        constructor(url) { workerUrl = url; }
+        postMessage() { this.onmessage({data: {transcript: 'decoded'}}); }
+        terminate() {}
+    },
+    setTimeout() { return 1; }, clearTimeout() {}
+});
+workerDecoder.read(new ArrayBuffer(12)).then(text => {
+    assert.equal(workerUrl, '/gamedata/chili/ttyrec-worker.js');
+    assert.equal(text, 'decoded');
+    console.log('Versioned game worker path check passed.');
+});

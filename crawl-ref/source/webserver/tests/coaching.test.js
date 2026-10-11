@@ -66,6 +66,7 @@ function fixture({ watching = false, clipboardFails = false, legacyCopy = false,
                 Promise.resolve({ ok: true, text: () => Promise.resolve("Fresh live morgue: HP 12/55") });
         },
         define(dependencies, factory) {
+            assert(dependencies.includes("./ttyrec"), "decoder must load from the versioned game directory");
             module = factory($, { register_handlers(map) { Object.assign(handlers, map); },
                 register_immediate_handlers(map) { Object.assign(immediate, map); },
                 send_message(type, data) { messages.push({ type, data }); } },

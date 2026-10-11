@@ -1,4 +1,4 @@
-define(["jquery", "comm", "client", "ttyrec"], function ($, comm, client, ttyrec) {
+define(["jquery", "comm", "client", "./ttyrec"], function ($, comm, client, ttyrec) {
     "use strict";
 
     var prompt = "";
