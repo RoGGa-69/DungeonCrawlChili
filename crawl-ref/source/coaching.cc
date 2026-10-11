@@ -102,12 +102,11 @@ static string _prompt(const string &dump)
 
 #ifdef USE_TILE_WEB
 // Browser controls are installed by the versioned Webtiles client.
-static int _postmortem_request_id = 0;
 class coaching_scroller : public formatted_scroller
 {
 public:
     coaching_scroller(const string &text, const string &prompt, bool postmortem = false)
-        : m_prompt(prompt), m_request_id(postmortem ? ++_postmortem_request_id : 0)
+        : m_prompt(prompt)
     {
         set_title(formatted_string(postmortem ? "Post-mortem analysis" : "Coaching Help"));
         set_tag(postmortem ? "postmortem_help" : "coaching_help");
@@ -120,11 +119,6 @@ protected:
     {
         // The normal popup protocol works on shared Webtiles servers.
         tiles.json_write_string("coaching_prompt", m_prompt);
-        if (m_request_id)
-        {
-            tiles.json_write_int("postmortem_request_id", m_request_id);
-            tiles.json_write_bool("postmortem_recording_required", true);
-        }
     }
     maybe_bool process_key(int key) override
     {
@@ -134,7 +128,6 @@ protected:
     }
 private:
     string m_prompt;
-    int m_request_id;
 };
 #endif
 
@@ -550,9 +543,8 @@ void show_postmortem_help(const string &dump)
     const string prompt = postmortem_prompt(dump);
 #ifdef USE_TILE_WEB
     coaching_scroller screen("Analyze the final morgue using your own AI account. "
-        "The server automatically attaches this session's ttyrec. "
-        "Analysis waits for the recording. Screen excerpts are sampled, "
-        "with finer detail at the end.", prompt, true);
+        "Optionally choose a ttyrec file to include readable screen excerpts. "
+        "Screen excerpts are sampled, with finer detail at the end.", prompt, true);
     screen.show();
 #else
     _show_tiles_coaching(prompt, true);

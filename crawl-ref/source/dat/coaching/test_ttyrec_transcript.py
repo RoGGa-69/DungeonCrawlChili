@@ -39,21 +39,6 @@ class TranscriptTests(unittest.TestCase):
         for data in (b'', b'123', struct.pack('<III', 1, 1000000, 0), frame('hello')[:-1]):
             with self.subTest(data=data), self.assertRaises(ValueError): module.transcript(data)
 
-    def test_snapshot_ignores_later_incomplete_frame(self):
-        with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory, 'session.ttyrec')
-            final = frame('You die...')
-            path.write_bytes(final + b'partial header')
-            self.assertIn('You die...', module.read_recording(path, byte_limit=None, end_offset=len(final)))
-            with self.assertRaises(ValueError): module.read_recording(path)
-
-    def test_server_streaming_keeps_upload_limit_separate(self):
-        with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory, 'session.ttyrec')
-            path.write_bytes(frame('You die...'))
-            with self.assertRaises(ValueError): module.read_recording(path, byte_limit=10)
-            self.assertIn('You die...', module.read_recording(path, byte_limit=None))
-
     def test_compressed_files_and_missing_path(self):
         with tempfile.TemporaryDirectory() as directory:
             for extension, encode in (('.ttyrec', lambda data:data), ('.gz', gzip.compress), ('.bz2', bz2.compress)):

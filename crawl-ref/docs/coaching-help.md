@@ -101,26 +101,14 @@ recording automatically. With ChatGPT selected, **G** requests the analysis
 through the player's Codex login, and displays a scrollable report inside
 Tiles. Escape returns from the report to the analysis chooser.
 
-In Webtiles, the server automatically flushes and converts the current
-session's ttyrec and attaches the screen excerpts. No file selection or
-morgue-only option is offered. Copy/open waits until the recording is ready;
-a missing or unreadable recording produces an error rather than silently
-sending morgue-only context. Excerpts are sent only to the playing account.
-The recording covers the current session; earlier saved/reopened sessions
-are not automatically combined. Spectators cannot launch analysis controls.
-Browsers use copy/paste for all four providers.
+In Webtiles, use the optional file chooser for an **uncompressed .ttyrec**.
+Decompress `.gz`/`.bz2` recordings first. The browser reads and converts the
+file locally; it is not uploaded to the game server. **Use morgue only**
+removes the attachment. Choose the recording from the same completed run;
+server-side recording discovery is not automatic. Spectators cannot launch
+analysis controls. Browsers use copy/paste for all four providers.
 
-This requires the updated shared `webtiles/process_handler.py` and the
-versioned client's generated `ttyrec_transcript.py` decoder. The Webtiles
-build copies the same decoder used by desktop Tiles into the installed
-client directory; there are no extra Python dependencies. Decoding runs in
-a server worker thread so it does not block the Webtiles event loop. Updating
-the game binary/client alone does not update the shared server handler.
-Servers using older game binaries retain the optional file chooser.
-
-Desktop/browser recording uploads are limited to 50 MiB after decompression.
-The server streams its own session recording without that upload-size limit.
-All conversion paths limit processing to 500,000 frames and bound excerpt size.
+Recording input is limited to 50 MiB after decompression and 500,000 frames.
 Invalid/truncated recordings show an error and preserve the current context.
 Nothing is sent to an AI until the player requests in-game analysis or
 pastes the copied context into a service. The report asks for the fatal

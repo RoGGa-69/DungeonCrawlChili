@@ -7,8 +7,6 @@ define(["jquery", "comm", "client", "ttyrec"], function ($, comm, client, ttyrec
     var loading = false;
     var load_error = "";
     var generation = 0;
-    var server_recordings = {};
-    var receive_recording = null;
     var providers = {
         chatgpt: { name: "ChatGPT", url: "https://chatgpt.com/" },
         claude: { name: "Claude", url: "https://claude.ai/" },
@@ -22,15 +20,6 @@ define(["jquery", "comm", "client", "ttyrec"], function ($, comm, client, ttyrec
             selected_provider = saved_provider;
     } catch (ignored) {}
     comm.register_handlers({
-        postmortem_recording: function (message) {
-            if (client.is_watching() || !Number.isInteger(message.request_id)) return;
-            // Bound cache and ignore recordings from older analysis requests.
-            var previous = Object.keys(server_recordings).map(Number);
-            if (previous.length && message.request_id < Math.max.apply(null, previous)) return;
-            server_recordings = {};
-            server_recordings[message.request_id] = message;
-            if (receive_recording) receive_recording(message);
-        },
         coaching_context: function (message) {
             prompt = typeof message.prompt === "string" ? message.prompt : "";
             if (active_popup)
@@ -61,8 +50,6 @@ define(["jquery", "comm", "client", "ttyrec"], function ($, comm, client, ttyrec
         loading = false;
         load_error = "";
         generation++;
-        server_recordings = {};
-        receive_recording = null;
     });
     $(document).on("game_init.coaching", function () {
         $("#coaching-help").prop("disabled", client.is_watching())
@@ -74,7 +61,7 @@ define(["jquery", "comm", "client", "ttyrec"], function ($, comm, client, ttyrec
             });
     });
 
-    function install_controls(popup, popup_prompt, postmortem, recording_id)
+    function install_controls(popup, popup_prompt, postmortem)
     {
         if (client.is_watching())
             return;
@@ -86,7 +73,6 @@ define(["jquery", "comm", "client", "ttyrec"], function ($, comm, client, ttyrec
             load_error = "";
         }
         active_popup = popup;
-        receive_recording = null;
         popup.off(".coaching");
         var controls = popup.children(".more").empty();
         var status = $("<div>").attr("role", "status").appendTo(controls);
@@ -139,26 +125,7 @@ define(["jquery", "comm", "client", "ttyrec"], function ($, comm, client, ttyrec
         var morgue_prompt = prompt;
         var reading_recording = false;
         var file_generation = 0;
-        var recording_ready = !recording_id;
-        if (postmortem && recording_id) {
-            status.text("Loading this session's ttyrec automatically...");
-            receive_recording = function (message) {
-                if (message.request_id !== recording_id) return;
-                if (message.error || typeof message.transcript !== "string" || !message.transcript.length
-                    || message.transcript.length > 200000) {
-                    recording_ready = false;
-                    status.text(message.error || "The server returned no usable recording. Analysis requires the ttyrec; return and retry.");
-                    return;
-                }
-                copy_prompt = morgue_prompt.slice(0, morgue_prompt.lastIndexOf("\nRECORDING:"))
-                    + "\nRECORDING: server ttyrec screen excerpts\nBEGIN TTYREC EXCERPTS\n"
-                    + message.transcript + "\nEND TTYREC EXCERPTS\n";
-                manual.val(copy_prompt);
-                recording_ready = true;
-                status.text("Session ttyrec attached automatically. Includes sampled screens with finer detail at the end.");
-            };
-        }
-        if (postmortem && !recording_id) {
+        if (postmortem) {
             var recording_label = $("<label>").text("Optional ttyrec (uncompressed .ttyrec, up to 50 MiB): ").appendTo(controls);
             var recording = $("<input>").attr({ type: "file", "aria-label": "Post-mortem ttyrec recording" }).appendTo(recording_label);
             recording.on("change", function (event) {
@@ -235,7 +202,6 @@ define(["jquery", "comm", "client", "ttyrec"], function ($, comm, client, ttyrec
 
         function copy(open_browser)
         {
-            if (!recording_ready) { status.text("Analysis requires this session's ttyrec. Wait for it to load, or return and retry."); return; }
             if (reading_recording) { status.text("Wait for the recording to finish loading."); return; }
             // Start copying while the game tab still has focus. Open the new
             // tab synchronously in this same gesture to avoid popup blockers.
@@ -264,15 +230,6 @@ define(["jquery", "comm", "client", "ttyrec"], function ($, comm, client, ttyrec
                 event.stopPropagation();
                 comm.send_message("key", { keycode: 27 });
             }).appendTo(controls);
-        if (recording_id && server_recordings[recording_id])
-            receive_recording(server_recordings[recording_id]);
-        if (recording_id && typeof setTimeout === "function") {
-            var recording_handler = receive_recording;
-            setTimeout(function () {
-                if (!recording_ready && receive_recording === recording_handler)
-                    status.text("The recording has not loaded. Return and retry, or ask the server administrator to check post-mortem recording support.");
-            }, 30000);
-        }
         popup.on("keydown.coaching keypress.coaching", function (event) {
             if ($(event.target).is("button")
                 && (event.key === " " || event.key === "Spacebar"
