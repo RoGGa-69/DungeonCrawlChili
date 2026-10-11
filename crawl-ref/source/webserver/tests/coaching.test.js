@@ -272,4 +272,4 @@ async function main() {
     assert.equal(watcherPopup.more, undefined);
     console.log("Webtiles coaching checks passed: launch, popup context, exact copy, browser open, keyboard, fallback, spectator controls.");
 }
-main().catch(error => { console.error(error); process.exitCode = 1; });
+main().catch (error => { console.error(error); process.exitCode = 1; });

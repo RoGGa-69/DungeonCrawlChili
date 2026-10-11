@@ -405,8 +405,10 @@ static void _show_tiles_coaching(string prompt, bool postmortem = false)
             ? "Copied. Paste into " + name + " to ask for advice."
             : "Could not copy the dump. Use the saved morgue file.");
         if (open && !opened)
+        {
             status->set_text(status->get_text().tostring() + "\nOpen "
                 + coaching_provider_url(_selected_provider) + " in your browser.");
+        }
     };
     auto attach_recording = [&]() {
 #ifdef UNIX
