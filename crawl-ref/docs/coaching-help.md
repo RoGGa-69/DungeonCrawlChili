@@ -101,26 +101,14 @@ recording automatically. With ChatGPT selected, **G** requests the analysis
 through the player's Codex login, and displays a scrollable report inside
 Tiles. Escape returns from the report to the analysis chooser.
 
-In Webtiles, the server automatically flushes and converts the current
-session's ttyrec and attaches the screen excerpts. No file selection or
-morgue-only option is offered. Copy/open waits until the recording is ready;
-a missing or unreadable recording produces an error rather than silently
-sending morgue-only context. Excerpts are sent only to the playing account.
-The recording covers the current session; earlier saved/reopened sessions
-are not automatically combined. Spectators cannot launch analysis controls.
-Browsers use copy/paste for all four providers.
+In Webtiles, use the optional file chooser for an **uncompressed .ttyrec**.
+Decompress `.gz`/`.bz2` recordings first. The browser reads and converts the
+file locally; it is not uploaded to the game server. **Use morgue only**
+removes the attachment. Choose the recording from the same completed run;
+server-side recording discovery is not automatic. Spectators cannot launch
+analysis controls. Browsers use copy/paste for all four providers.
 
-This requires the updated shared `webtiles/process_handler.py` and the
-versioned client's generated `ttyrec_transcript.py` decoder. The Webtiles
-build copies the same decoder used by desktop Tiles into the installed
-client directory; there are no extra Python dependencies. Decoding runs in
-a server worker thread so it does not block the Webtiles event loop. Updating
-the game binary/client alone does not update the shared server handler.
-Servers using older game binaries retain the optional file chooser.
-
-Desktop/browser recording uploads are limited to 50 MiB after decompression.
-The server streams its own session recording without that upload-size limit.
-All conversion paths limit processing to 500,000 frames and bound excerpt size.
+Recording input is limited to 50 MiB after decompression and 500,000 frames.
 Invalid/truncated recordings show an error and preserve the current context.
 Nothing is sent to an AI until the player requests in-game analysis or
 pastes the copied context into a service. The report asks for the fatal
@@ -133,43 +121,19 @@ Additional checks (from `source/`):
 
 ## Deployment on shared Webtiles servers
 
-The game client loads the ttyrec decoder and its worker relative to the
-versioned game directory. Deploy the loading fix from PR #264 before serving
-this feature. The original client requested `/static/scripts/ttyrec.js` from
-the shared lobby and could leave Chili stuck on **Loading...**. Rebuilding
-and installing the corrected Chili version updates its game assets; reload
-the browser afterwards. DCF's temporary copies of the decoder and worker in
-the shared lobby directory support cached clients and are not required for a
-fresh deployment of the corrected version.
+Coaching Help and post-mortem analysis use the normal game popup protocol.
+CXC, CPO, DCF, and other hosts need only their normal Chili build/install and
+a browser refresh. No Chili-specific shared Python handler, server restart,
+API key, or administrator-installed lobby scripts are required.
 
-Normal Coaching Help requires no shared server handler changes. Automatic
-post-mortem ttyrec analysis additionally requires the shared handler change
-from PR #262. Updating only the Chili binary and game assets leaves the
-analysis dialog waiting for a recording that the old server never sends.
-These requirements also apply to CXC, CPO, and other hosts. Their server
-administrators must apply the shared change and restart their Webtiles
-service; a game build alone does not activate it.
+The corrected client loads its ttyrec decoder and worker from the versioned
+game directory. Keep that loading fix when updating: the original client
+requested `/static/scripts/ttyrec.js` from the shared lobby and could leave
+Chili stuck on **Loading...**. DCF's temporary lobby copies supported cached
+clients; a fresh deployment of the corrected Chili version does not need them.
 
-For servers with their own handler customizations, a focused patch is
-provided at `source/util/server/chili-postmortem-ttyrec.patch`. From this
-repository's `crawl-ref/source` directory, set `handler` to the server's
-actual shared file, then review and apply it:
-
-```sh
-handler=/path/to/shared/webserver/webtiles/process_handler.py
-patch --dry-run "$handler" util/server/chili-postmortem-ttyrec.patch
-cp -p "$handler" "$handler.before-chili-postmortem"
-patch "$handler" util/server/chili-postmortem-ttyrec.patch
-```
-
-Use the server's normal administrator privileges where needed. If the dry
-run fails, reconcile the changes with that server's handler before applying
-them; do not replace the whole file with Chili's copy. Skip the patch if the
-handler already contains `_request_postmortem_recording` and its call from
-`_on_socket_message`.
-
-Confirm the installed Chili client directory contains `ttyrec_transcript.py`
-(the Webtiles build generates and installs it). Restart the shared Webtiles
-service using that host's normal procedure; this disconnects current
-players. Reload the browser and reopen analysis to check that it reports
-**Session ttyrec attached automatically** before copying the context.
+Automatic server-side ttyrec attachment has been removed. Post-mortem
+analysis copies the final morgue immediately; players can optionally select
+a downloaded, uncompressed ttyrec to include browser-generated excerpts.
+Shared handlers already patched for automatic attachment may retain that
+code: the updated game no longer sends the request that activates it.

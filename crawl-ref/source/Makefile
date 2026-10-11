@@ -1344,13 +1344,9 @@ STATICFILES = $(TILEIMAGEFILES:%=webserver/game_data/static/%.png) \
               $(TITLEIMGS:%=webserver/static/title_%.png) \
               $(TILEINFOJS:%=webserver/game_data/static/tileinfo-%.js) \
               webserver/webtiles/version.txt \
-              webserver/game_data/static/status-icon-sizes.js \
-              webserver/game_data/ttyrec_transcript.py
+              webserver/game_data/static/status-icon-sizes.js
 
 $(TILEINFOJS:%=$(RLTILES)/tileinfo-%.js): build-rltiles
-
-webserver/game_data/ttyrec_transcript.py: dat/coaching/ttyrec-transcript.py
-	$(QUIET_COPY)$(COPY) $< $@
 
 webserver/webtiles/version.txt: .ver
 	@git describe $(MERGE_BASE) > webserver/webtiles/version.txt
