@@ -98,7 +98,7 @@ define(["require"], function (require) {
         if (typeof Worker !== "function")
             return Promise.resolve().then(function () { return transcript(buffer); });
         return new Promise(function (resolve, reject) {
-            var worker = new Worker(require.toUrl("ttyrec-worker.js"));
+            var worker = new Worker(require.toUrl("./ttyrec-worker.js"));
             var timer = setTimeout(function () {
                 worker.terminate(); reject(new Error("Recording conversion timed out."));
             }, 15000);
