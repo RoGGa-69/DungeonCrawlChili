@@ -311,6 +311,7 @@ python.exe util/gen-all.py</Command>
     <ClCompile Include="..\cio.cc" />
     <ClCompile Include="..\cloud.cc" />
     <ClCompile Include="..\clua.cc" />
+    <ClCompile Include="..\coaching.cc" />
     <ClCompile Include="..\cluautil.cc" />
     <ClCompile Include="..\colour.cc" />
     <ClCompile Include="..\command.cc" />
@@ -330,6 +331,7 @@ python.exe util/gen-all.py</Command>
     <ClCompile Include="..\dbg-objstat.cc" />
     <ClCompile Include="..\dbg-scan.cc" />
     <ClCompile Include="..\dbg-util.cc" />
+    <ClCompile Include="..\death-recap.cc" />
     <ClCompile Include="..\death-curse.cc" />
     <ClCompile Include="..\decks.cc" />
     <ClCompile Include="..\delay.cc" />
@@ -667,6 +669,7 @@ python.exe util/gen-all.py</Command>
     <ClInclude Include="..\cloud-type.h" />
     <ClInclude Include="..\cloud.h" />
     <ClInclude Include="..\clua.h" />
+    <ClInclude Include="..\coaching.h" />
     <ClInclude Include="..\cluautil.h" />
     <ClInclude Include="..\cmd-keys.h" />
     <ClInclude Include="..\cmd-name.h" />
@@ -690,6 +693,7 @@ python.exe util/gen-all.py</Command>
     <ClInclude Include="..\dbg-objstat.h" />
     <ClInclude Include="..\dbg-scan.h" />
     <ClInclude Include="..\dbg-util.h" />
+    <ClInclude Include="..\death-recap.h" />
     <ClInclude Include="..\death-curse.h" />
     <ClInclude Include="..\debug.h" />
     <ClInclude Include="..\deck-rarity-type.h" />
