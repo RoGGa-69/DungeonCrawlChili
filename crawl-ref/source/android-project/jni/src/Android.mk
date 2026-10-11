@@ -40,6 +40,7 @@ LOCAL_SRC_FILES := $(SDL_PATH)/src/main/android/SDL_android_main.c \
     $(CRAWL_PATH)/cio.cc \
     $(CRAWL_PATH)/cloud.cc \
     $(CRAWL_PATH)/clua.cc \
+    $(CRAWL_PATH)/coaching.cc \
     $(CRAWL_PATH)/cluautil.cc \
     $(CRAWL_PATH)/colour.cc \
     $(CRAWL_PATH)/command.cc \
@@ -56,6 +57,7 @@ LOCAL_SRC_FILES := $(SDL_PATH)/src/main/android/SDL_android_main.c \
     $(CRAWL_PATH)/dbg-objstat.cc \
     $(CRAWL_PATH)/dbg-scan.cc \
     $(CRAWL_PATH)/dbg-util.cc \
+    $(CRAWL_PATH)/death-recap.cc \
     $(CRAWL_PATH)/death-curse.cc \
     $(CRAWL_PATH)/decks.cc \
     $(CRAWL_PATH)/delay.cc \

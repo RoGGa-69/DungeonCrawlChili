@@ -83,9 +83,11 @@ void death_recap_hp_change(const string &source, int before, int after, int dama
         totals["damage"].get_int() += damage;
         ++totals["hits"].get_int();
         if (after <= 0)
+        {
             turn["fatal"] = make_stringf("%s dealt %d damage at %d HP%s",
                 source.c_str(), damage, before,
                 after < 0 ? make_stringf(" (%d overkill)", -after).c_str() : "");
+        }
     }
     else if (after > before)
         turn["healing_total"].get_int() += after - before;

@@ -67,6 +67,9 @@
     <ClCompile Include="..\clua.cc">
       <Filter>cc</Filter>
     </ClCompile>
+    <ClCompile Include="..\coaching.cc">
+      <Filter>cc</Filter>
+    </ClCompile>
     <ClCompile Include="..\cluautil.cc">
       <Filter>cc</Filter>
     </ClCompile>
@@ -925,6 +928,9 @@
     <ClCompile Include="..\maybe-bool.cc">
       <Filter>cc</Filter>
     </ClCompile>
+    <ClCompile Include="..\death-recap.cc">
+      <Filter>cc</Filter>
+    </ClCompile>
     <ClCompile Include="..\death-curse.cc">
       <Filter>cc</Filter>
     </ClCompile>
@@ -1081,6 +1087,9 @@
       <Filter>h</Filter>
     </ClInclude>
     <ClInclude Include="..\clua.h">
+      <Filter>h</Filter>
+    </ClInclude>
+    <ClInclude Include="..\coaching.h">
       <Filter>h</Filter>
     </ClInclude>
     <ClInclude Include="..\cluautil.h">
@@ -2278,6 +2287,9 @@
     <ClInclude Include="..\filter-enum.h" />
     <ClInclude Include="..\mon-explode.h" />
     <ClInclude Include="..\outer-menu.h" />
+    <ClInclude Include="..\death-recap.h">
+      <Filter>h</Filter>
+    </ClInclude>
     <ClInclude Include="..\death-curse.h">
       <Filter>h</Filter>
     </ClInclude>
