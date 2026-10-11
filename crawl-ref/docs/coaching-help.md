@@ -130,3 +130,46 @@ strategic patterns, and three practical lessons, in up to 1,200 words.
 Additional checks (from `source/`):
 `python3 dat/coaching/test_ttyrec_transcript.py` and
 `node webserver/tests/ttyrec.test.js`.
+
+## Deployment on shared Webtiles servers
+
+The game client loads the ttyrec decoder and its worker relative to the
+versioned game directory. Deploy the loading fix from PR #264 before serving
+this feature. The original client requested `/static/scripts/ttyrec.js` from
+the shared lobby and could leave Chili stuck on **Loading...**. Rebuilding
+and installing the corrected Chili version updates its game assets; reload
+the browser afterwards. DCF's temporary copies of the decoder and worker in
+the shared lobby directory support cached clients and are not required for a
+fresh deployment of the corrected version.
+
+Normal Coaching Help requires no shared server handler changes. Automatic
+post-mortem ttyrec analysis additionally requires the shared handler change
+from PR #262. Updating only the Chili binary and game assets leaves the
+analysis dialog waiting for a recording that the old server never sends.
+These requirements also apply to CXC, CPO, and other hosts. Their server
+administrators must apply the shared change and restart their Webtiles
+service; a game build alone does not activate it.
+
+For servers with their own handler customizations, a focused patch is
+provided at `source/util/server/chili-postmortem-ttyrec.patch`. From this
+repository's `crawl-ref/source` directory, set `handler` to the server's
+actual shared file, then review and apply it:
+
+```sh
+handler=/path/to/shared/webserver/webtiles/process_handler.py
+patch --dry-run "$handler" util/server/chili-postmortem-ttyrec.patch
+cp -p "$handler" "$handler.before-chili-postmortem"
+patch "$handler" util/server/chili-postmortem-ttyrec.patch
+```
+
+Use the server's normal administrator privileges where needed. If the dry
+run fails, reconcile the changes with that server's handler before applying
+them; do not replace the whole file with Chili's copy. Skip the patch if the
+handler already contains `_request_postmortem_recording` and its call from
+`_on_socket_message`.
+
+Confirm the installed Chili client directory contains `ttyrec_transcript.py`
+(the Webtiles build generates and installs it). Restart the shared Webtiles
+service using that host's normal procedure; this disconnects current
+players. Reload the browser and reopen analysis to check that it reports
+**Session ttyrec attached automatically** before copying the context.
