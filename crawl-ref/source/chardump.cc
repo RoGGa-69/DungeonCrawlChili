@@ -220,6 +220,11 @@ bool save_live_character_dump(string &text)
     return true;
 }
 
+string final_character_dump(const scorefile_entry &se)
+{
+    return _get_dump(true, &se).text;
+}
+
 string seed_description()
 {
     return make_stringf(

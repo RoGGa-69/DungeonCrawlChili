@@ -59,3 +59,16 @@ TEST_CASE("Coaching shortcut is distinct and leaves existing keys intact", "[coa
     CHECK(parse_keyseq("\\{Shift-F1}") == keyseq{CK_SHIFT_F1});
 }
 #endif
+
+#ifdef USE_TILE
+TEST_CASE("Post-mortem instructions preserve evidence and known item properties", "[coaching]")
+{
+    const string dump = "HP: -3/50\nNotes: <data>\n";
+    const string prompt = postmortem_prompt(dump);
+    CHECK(prompt.find("BEGIN FINAL MORGUE\n" + dump + "\nEND FINAL MORGUE") != string::npos);
+    CHECK(prompt.find("All items are identified in Dungeon Crawl Chili") != string::npos);
+    CHECK(prompt.find("No ttyrec supplied") != string::npos);
+    CHECK(prompt.find("available THEN") != string::npos);
+    CHECK(prompt.find("do not just repeat the message history") != string::npos);
+}
+#endif

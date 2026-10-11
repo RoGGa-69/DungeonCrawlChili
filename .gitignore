@@ -77,3 +77,5 @@ dkms.conf
 
 # debug information files
 *.dwo
+
+/crawl-ref/source/webserver/game_data/ttyrec_transcript.py

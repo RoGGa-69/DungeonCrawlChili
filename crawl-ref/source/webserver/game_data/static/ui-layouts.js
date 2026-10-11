@@ -776,8 +776,9 @@ function ($, comm, client, ui, enums, cr, util, scroller, main, gui, player, opt
         else
             $popup.children(".header").remove();
 
-        if (desc.tag === "coaching_help")
-            coaching.install_controls($popup, desc.coaching_prompt);
+        if (desc.tag === "coaching_help" || desc.tag === "postmortem_help")
+            coaching.install_controls($popup, desc.coaching_prompt, desc.tag === "postmortem_help",
+                desc.postmortem_recording_required ? desc.postmortem_request_id : null);
 
         var s = scroller($body[0]);
         var scroll_elem = s.scrollElement;
@@ -962,6 +963,23 @@ function ($, comm, client, ui, enums, cr, util, scroller, main, gui, player, opt
         $popup.on("keydown keypress", function (event) {
             scroller_handle_key(s, event);
         });
+
+        if (desc.postmortem_available && !client.is_watching()) {
+            var analysis = $("<button>").attr("type", "button").text("Post-mortem analysis [P]");
+            analysis.on("click", function (event) {
+                event.stopPropagation();
+                comm.send_message("key", { keycode: 112 });
+            });
+            $popup.append(analysis);
+            // Keep native button activation and focus navigation in the browser.
+            $popup.off("keydown keypress").on("keydown keypress", function (event) {
+                if ($(event.target).is("button") || event.key === "Tab") {
+                    event.stopImmediatePropagation();
+                    return;
+                }
+                scroller_handle_key(s, event);
+            });
+        }
 
         var canvas = $popup.find(".header > canvas");
         var renderer = new cr.DungeonCellRenderer();
