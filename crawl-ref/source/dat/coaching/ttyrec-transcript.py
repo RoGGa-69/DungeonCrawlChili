@@ -3,6 +3,7 @@ import bz2
 from collections import deque
 import gzip
 import json
+import io
 from pathlib import Path
 import re
 import struct
@@ -87,6 +88,10 @@ class Screen:
 
 def transcript(data):
     if len(data) > MAX_BYTES: raise ValueError('Recording exceeds the 50 MiB limit.')
+    return _transcript_stream(io.BytesIO(data))
+
+
+def _transcript_stream(stream, byte_limit=MAX_BYTES, end_offset=None):
     screen = Screen()
     import codecs
     decoder = codecs.getincrementaldecoder('utf-8')('replace')
@@ -97,15 +102,25 @@ def transcript(data):
     offset = count = 0
     start = last = None
     previous = ''
-    while offset < len(data):
-        if offset+12 > len(data): raise ValueError('Truncated ttyrec header.')
-        sec, usec, size = struct.unpack_from('<III', data, offset)
+    while True:
+        if end_offset is not None and offset >= end_offset: break
+        header = stream.read(12)
+        if not header: break
+        if len(header) != 12: raise ValueError('Truncated ttyrec header.')
+        sec, usec, size = struct.unpack('<III', header)
         offset += 12
-        if usec >= 1000000 or size > MAX_BYTES or offset+size > len(data):
+        if byte_limit is not None and offset+size > byte_limit:
+            raise ValueError('Recording exceeds the 50 MiB limit.')
+        if end_offset is not None and offset+size > end_offset:
+            raise ValueError('Truncated ttyrec snapshot.')
+        if usec >= 1000000 or size > MAX_BYTES:
+            raise ValueError('Invalid ttyrec frame.')
+        payload = stream.read(size)
+        if len(payload) != size:
             raise ValueError('Invalid or truncated ttyrec frame; use an uncompressed standard ttyrec.')
         now = sec + usec/1000000
         if start is None: start = now
-        screen.feed(decoder.decode(data[offset:offset+size]))
+        screen.feed(decoder.decode(payload))
         offset += size; count += 1
         if count > 500000: raise ValueError('Recording contains too many frames.')
         current = screen.text()
@@ -133,11 +148,11 @@ def transcript(data):
     return note + '\n\n'.join(excerpts)
 
 
-def read_recording(path):
+def read_recording(path, byte_limit=MAX_BYTES, end_offset=None):
     path = Path(path).expanduser()
     opener = bz2.open if path.suffix == '.bz2' else gzip.open if path.suffix == '.gz' else open
-    with opener(path, 'rb') as stream: data = stream.read(MAX_BYTES+1)
-    return transcript(data)
+    with opener(path, 'rb') as stream:
+        return _transcript_stream(stream, byte_limit, end_offset)
 
 if __name__ == '__main__':
     try: result = {'transcript': read_recording(sys.argv[1])}
