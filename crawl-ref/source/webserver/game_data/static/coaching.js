@@ -121,7 +121,7 @@ define(["jquery", "comm", "client", "./ttyrec"], function ($, comm, client, ttyr
                                 + "properties. Give plain text.\n\nBEGIN LIVE CHARACTER DUMP\n"
                                 + dump + "\nEND LIVE CHARACTER DUMP\n";
                         install_controls(active_popup || popup);
-                    }).catch(function () {
+                    }).catch (function () {
                         if (request_generation !== generation || prompt)
                             return;
                         loading = false;
@@ -180,7 +180,7 @@ define(["jquery", "comm", "client", "./ttyrec"], function ($, comm, client, ttyr
                     manual.val(copy_prompt);
                     reading_recording = false;
                     status.text("Recording attached locally. Sampled screen excerpts included, with finer detail at the end.");
-                }).catch(function (error) {
+                }).catch (function (error) {
                     if (request_id !== file_generation) return;
                     reading_recording = false;
                     status.text("Could not read recording: " + error.message + " Current context retained. Decompress .gz/.bz2 files first.");
